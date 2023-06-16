@@ -1,10 +1,8 @@
 import javax.swing.*;
 import java.awt.*;
 
-import static java.lang.invoke.MethodHandles.lookup;
-
 public class Path extends Tile {
-    static final ImageIcon SPRITE = getSprite(lookup().lookupClass().getSimpleName());
+    static final ImageIcon SPRITE = new ImageIcon("assets/path.png");
     static final ImageIcon[] STEP_DIRECTIONS = {new ImageIcon("assets/pathN.png"),
                                                 new ImageIcon("assets/pathE.png"),
                                                 new ImageIcon("assets/pathS.png"),
@@ -67,7 +65,7 @@ public class Path extends Tile {
     }
 
     @Override
-    public void draw(JPanel panel, Graphics page) {
+    public void draw(JPanel panel, Graphics page, int xOffset, int yOffset) {
         ImageIcon image = SPRITE;
 
         if (completed)
@@ -75,6 +73,6 @@ public class Path extends Tile {
         else if (state > 0 && state < 5)
             image = STEP_DIRECTIONS[state - 1];
 
-        image.paintIcon(panel, page, X_POS * TILE_SIZE, Y_POS * TILE_SIZE);
+        image.paintIcon(panel, page, X_POS * TILE_SIZE + xOffset, Y_POS * TILE_SIZE + yOffset);
     }
 }

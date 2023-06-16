@@ -82,8 +82,8 @@ public class Map extends JPanel implements ActionListener {
 
         if (playerCharacter == null) {
             outer:
-            for (Tile[] row : map) {
-                for (Tile tile : row) {
+            for (Tile[] column : map) {
+                for (Tile tile : column) {
                     if (tile instanceof Path path) {
                         playerCharacter = new Character(path.getX_POS(), path.getY_POS());
                         pathStack.push(map[path.getX_POS()][path.getY_POS()]);
@@ -113,11 +113,16 @@ public class Map extends JPanel implements ActionListener {
         }
         if (hasPaths())
             setPreferredSize(new Dimension(map.length * Tile.TILE_SIZE, map[0].length * Tile.TILE_SIZE));
+        else {
+            map[0][0] = new Path(0, 0);
+            playerCharacter = new Character(0, 0);
+        }
+
     }
 
     public boolean hasPaths() {
-        for (Tile[] row : map) {
-            for (Tile tile : row) {
+        for (Tile[] column : map) {
+            for (Tile tile : column) {
                 if (tile instanceof Path)
                     return true;
             }
@@ -136,7 +141,7 @@ public class Map extends JPanel implements ActionListener {
 
     private void pathComplete() {
         clock.stop();
-        parent.stop.setEnabled(false);
+        parent.viewerStop.setEnabled(false);
         showMessageDialog(null, "You made it!");
     }
 
@@ -245,8 +250,8 @@ public class Map extends JPanel implements ActionListener {
     }
 
     public void reset() {
-        for (Tile[] row : map) {
-            for (Tile tile : row) {
+        for (Tile[] column : map) {
+            for (Tile tile : column) {
                 if (tile instanceof Path path)
                     path.reset();
             }
@@ -263,9 +268,9 @@ public class Map extends JPanel implements ActionListener {
     protected void paintComponent(Graphics page) {
         super.paintComponent(page);
 
-        for (Tile[] row : map) {
-            for (Tile tile : row) {
-                tile.draw(this, page);
+        for (Tile[] column : map) {
+            for (Tile tile : column) {
+                tile.draw(this, page, 0, 0);
             }
         }
 
