@@ -7,17 +7,27 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+/**
+ * Facilitates modification and creation of maps by the user.
+ */
 public class MapEditor extends JPanel implements MouseListener {
-    ArrayList<ArrayList<Tile>> map;
-    String selectedTileType;
-    Driver parent;
-    int topOffset;
+    private ArrayList<ArrayList<Tile>> mapGrid;
+    private String selectedTileType, savedFilePath;
+    private boolean mapSaved;
 
-    public MapEditor(Driver parent, String filePath) {
-        this.parent = parent;
-        topOffset = 25;
+    private final int TOP_OFFSET;
 
+    /**
+     * Constructor for the <code>MapEditor</code> class. Initializes the map to
+     * be edited by reading it in from a text file.
+     *
+     * @param filePath the path of the text file this map should be initialized
+     *                 from.
+     */
+    public MapEditor(String filePath) {
         selectedTileType = "path";
+
+        TOP_OFFSET = 25;
 
         Scanner mapReader = null;
         boolean fileReadError = false;
@@ -27,10 +37,10 @@ public class MapEditor extends JPanel implements MouseListener {
             fileReadError = true;
         }
 
-        map = new ArrayList<>();
+        mapGrid = new ArrayList<>();
         if (fileReadError) {
-            map.add(new ArrayList<>());
-            map.get(0).add(new Path(0, 0));
+            mapGrid.add(new ArrayList<>());
+            mapGrid.get(0).add(new Path(0, 0));
         } else {
             ArrayList<char[]> charGrid = new ArrayList<>();
             while (mapReader.hasNextLine()) {
@@ -46,7 +56,7 @@ public class MapEditor extends JPanel implements MouseListener {
             char currentChar;
             char[] currentRow;
             for (int i = 0; i < longestLine; i++) {
-                map.add(new ArrayList<>());
+                mapGrid.add(new ArrayList<>());
 
                 for (int j = 0, n = charGrid.size(); j < n; j++) {
                     currentRow = charGrid.get(j);
@@ -56,110 +66,140 @@ public class MapEditor extends JPanel implements MouseListener {
                         currentChar = '#';
 
                     if (currentChar == '.')
-                        map.get(i).add(new Path(i, j));
+                        mapGrid.get(i).add(new Path(i, j));
                     else if (currentChar == 'G')
-                        map.get(i).add(new Goal(i, j));
+                        mapGrid.get(i).add(new Goal(i, j));
                     else if (currentChar == 'C') {
-                        map.get(i).add(new CharacterStart(i, j));
+                        mapGrid.get(i).add(new CharacterStart(i, j));
                     } else
-                        map.get(i).add(new Obstacle(i, j));
+                        mapGrid.get(i).add(new Obstacle(i, j));
                 }
             }
         }
 
         addMouseListener(this);
-        this.setPreferredSize(new Dimension(map.size() * Tile.TILE_SIZE,
-                map.get(0).size() * Tile.TILE_SIZE + topOffset));
+        this.setPreferredSize(new Dimension(mapGrid.size() * Tile.TILE_SIZE,
+                mapGrid.get(0).size() * Tile.TILE_SIZE + TOP_OFFSET));
     }
 
+    /**
+     * Adds a column to <code>mapGrid</code> and populates it with
+     * <code>Path</code> objects.
+     */
+    public void increaseHorizontal() {
+        mapGrid.add(new ArrayList<>());
+
+        for (int i = 0, n = mapGrid.get(0).size(), x = mapGrid.size() - 1; i < n; i++) {
+            mapGrid.get(x).add(new Path(x, i));
+        }
+
+        this.setPreferredSize(new Dimension(mapGrid.size() * Tile.TILE_SIZE,
+                mapGrid.get(0).size() * Tile.TILE_SIZE + TOP_OFFSET));
+        this.revalidate();
+
+        repaint();
+    }
+
+    /**
+     * Removes a column from <code>mapGrid</code>.
+     */
+    public void decreaseHorizontal() {
+        mapGrid.remove(mapGrid.size() - 1);
+
+        this.setPreferredSize(new Dimension(mapGrid.size() * Tile.TILE_SIZE,
+                mapGrid.get(0).size() * Tile.TILE_SIZE + TOP_OFFSET));
+        this.revalidate();
+
+        repaint();
+    }
+
+    public int getMapWidth() {
+        return mapGrid.size();
+    }
+
+    /**
+     * Adds a row to <code>mapGrid</code> and populates it with
+     * <code>Path</code> objects.
+     */
+    public void increaseVertical() {
+        for (int i = 0, n = mapGrid.size(), y = mapGrid.get(0).size(); i < n; i++) {
+            mapGrid.get(i).add(new Path(i, y));
+        }
+
+        this.setPreferredSize(new Dimension(mapGrid.size() * Tile.TILE_SIZE,
+                mapGrid.get(0).size() * Tile.TILE_SIZE + TOP_OFFSET));
+        this.revalidate();
+
+        repaint();
+    }
+
+    /**
+     * Removes a row from <code>mapGrid</code>.
+     */
+    public void decreaseVertical() {
+        for (int i = 0, n = mapGrid.size(), y = mapGrid.get(0).size() - 1; i < n; i++) {
+            mapGrid.get(i).remove(y);
+        }
+
+        this.setPreferredSize(new Dimension(mapGrid.size() * Tile.TILE_SIZE,
+                mapGrid.get(0).size() * Tile.TILE_SIZE + TOP_OFFSET));
+        this.revalidate();
+
+        repaint();
+    }
+
+    public int getMapHeight() {
+        return mapGrid.get(0).size();
+    }
+
+    /**
+     * Sets the class to be used when drawing <code>Tile</code> objects onto the
+     * map using the mouse.
+     *
+     * @param type the name of the class to be used.
+     */
     public void setSelectedTile(String type) {
         selectedTileType = type;
 
         repaint();
     }
 
-    public void expandHorizontal() {
-        map.add(new ArrayList<>());
-
-        for (int i = 0, n = map.get(0).size(), x = map.size() - 1; i < n; i++) {
-            map.get(x).add(new Path(x, i));
-        }
-
-        if (map.size() >= 255)
-            parent.editorIncreaseHorizontal.setEnabled(false);
-
-        parent.editorDecreaseHorizontal.setEnabled(true);
-
-        this.setPreferredSize(new Dimension(map.size() * Tile.TILE_SIZE,
-                                    map.get(0).size() * Tile.TILE_SIZE + topOffset));
-        this.revalidate();
-
-        repaint();
+    public void setFilePath(String filePath) {
+        savedFilePath = filePath;
     }
 
-    public void decreaseHorizontal() {
-        map.remove(map.size() - 1);
-
-        if (map.size() == 1) {
-            parent.editorDecreaseHorizontal.setEnabled(false);
-        }
-
-        this.setPreferredSize(new Dimension(map.size() * Tile.TILE_SIZE,
-                                    map.get(0).size() * Tile.TILE_SIZE + topOffset));
-        this.revalidate();
-
-        repaint();
+    public String getSavedFilePath() {
+        return savedFilePath;
     }
 
-    public void expandVertical() {
-        for (int i = 0, n = map.size(), y = map.get(0).size(); i < n; i++) {
-            map.get(i).add(new Path(i, y));
-        }
-
-        if (map.get(0).size() >= 255)
-            parent.editorIncreaseVertical.setEnabled(false);
-
-        parent.editorDecreaseVertical.setEnabled(true);
-
-        this.setPreferredSize(new Dimension(map.size() * Tile.TILE_SIZE,
-                                    map.get(0).size() * Tile.TILE_SIZE + topOffset));
-        this.revalidate();
-
-        repaint();
+    public boolean isSaved() {
+        return mapSaved;
     }
 
-    public void decreaseVertical() {
-        for (int i = 0, n = map.size(), y = map.get(0).size() - 1; i < n; i++) {
-            map.get(i).remove(y);
-        }
-
-        if (map.get(0).size() == 1) {
-            parent.editorDecreaseVertical.setEnabled(false);
-        }
-
-        this.setPreferredSize(new Dimension(map.size() * Tile.TILE_SIZE,
-                                    map.get(0).size() * Tile.TILE_SIZE + topOffset));
-        this.revalidate();
-
-        repaint();
-    }
-
+    /**
+     * Iterates through each <code>Tile</code> in <code>map</code> and builds a
+     * string of characters representing each object.
+     *
+     * @return the map as a String.
+     */
     public String toString() {
         StringBuilder mapString = new StringBuilder();
 
-        for (int i = 0, n = map.get(0).size(); i < n; i++) {
-            for (int j = 0, length = map.size(); j < length; j++) {
-                if (map.get(j).get(i) instanceof CharacterStart)
+        for (int i = 0, n = mapGrid.get(0).size(); i < n; i++) {
+            for (int j = 0, length = mapGrid.size(); j < length; j++) {
+                if (mapGrid.get(j).get(i) instanceof CharacterStart)
                     mapString.append('C');
-                else if (map.get(j).get(i) instanceof Path)
+                else if (mapGrid.get(j).get(i) instanceof Path)
                     mapString.append('.');
-                else if (map.get(j).get(i) instanceof Goal)
+                else if (mapGrid.get(j).get(i) instanceof Goal)
                     mapString.append('G');
-                else if (map.get(j).get(i) instanceof Obstacle)
+                else if (mapGrid.get(j).get(i) instanceof Obstacle)
                     mapString.append('#');
             }
             mapString.append("\n");
         }
+
+        mapSaved = true;
 
         return mapString.toString();
     }
@@ -170,38 +210,38 @@ public class MapEditor extends JPanel implements MouseListener {
 
         page.drawString("Selected: " + selectedTileType, 0, 15);
 
-        for (ArrayList<Tile> column : map) {
+        for (ArrayList<Tile> column : mapGrid) {
             for (Tile tile : column) {
-                tile.draw(this, page, 0, topOffset);
+                tile.draw(this, page, 0, TOP_OFFSET);
             }
         }
     }
 
     @Override
-    public void mouseClicked(MouseEvent e) {
-
-    }
+    public void mouseClicked(MouseEvent e) {}
     @Override
-    public void mousePressed(MouseEvent e) {
+    public void mousePressed(MouseEvent e) {}
 
-    }
-
+    /**
+     * Changes the <code>Tile</code> object under the mouse to one of the type
+     * specified by <code>selectedTileType</code>.
+     *
+     * @param me the event to be processed.
+     */
     @Override
     public void mouseReleased(MouseEvent me) {
-        int mapWidth = map.size() * Tile.TILE_SIZE;
-        int mapHeight = map.get(0).size() * Tile.TILE_SIZE;
+        int mapWidth = mapGrid.size() * Tile.TILE_SIZE;
+        int mapHeight = mapGrid.get(0).size() * Tile.TILE_SIZE;
 
-        if (me.getX() < mapWidth && me.getY() > topOffset && me.getY() < mapHeight + topOffset) {
+        if (me.getX() < mapWidth && me.getY() > TOP_OFFSET && me.getY() < mapHeight + TOP_OFFSET) {
             int gridX = me.getX() / Tile.TILE_SIZE;
-            int gridY = (me.getY() - topOffset) / Tile.TILE_SIZE;
+            int gridY = (me.getY() - TOP_OFFSET) / Tile.TILE_SIZE;
 
-            if (map.get(gridX).get(gridY).getClass().getSimpleName().equals(selectedTileType) == false) {
-                switch (selectedTileType) {
-                    case "path" -> map.get(gridX).set(gridY, new Path(gridX, gridY));
-                    case "goal" -> map.get(gridX).set(gridY, new Goal(gridX, gridY));
-                    case "characterStart" -> map.get(gridX).set(gridY, new CharacterStart(gridX, gridY));
-                    case "obstacle" -> map.get(gridX).set(gridY, new Obstacle(gridX, gridY));
-                }
+            switch (selectedTileType) {
+                case "path" -> mapGrid.get(gridX).set(gridY, new Path(gridX, gridY));
+                case "goal" -> mapGrid.get(gridX).set(gridY, new Goal(gridX, gridY));
+                case "characterStart" -> mapGrid.get(gridX).set(gridY, new CharacterStart(gridX, gridY));
+                case "obstacle" -> mapGrid.get(gridX).set(gridY, new Obstacle(gridX, gridY));
             }
         }
 
@@ -209,11 +249,7 @@ public class MapEditor extends JPanel implements MouseListener {
     }
 
     @Override
-    public void mouseEntered(MouseEvent e) {
-
-    }
+    public void mouseEntered(MouseEvent e) {}
     @Override
-    public void mouseExited(MouseEvent e) {
-
-    }
+    public void mouseExited(MouseEvent e) {}
 }

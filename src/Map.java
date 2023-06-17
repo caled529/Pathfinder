@@ -10,6 +10,9 @@ import java.util.Stack;
 
 import static javax.swing.JOptionPane.showMessageDialog;
 
+/**
+ * Facilitates the viewing and solving of user-created maps using a stack.
+ */
 public class Map extends JPanel implements ActionListener {
     public static final String DEFAULT_MAP = """
                                              ##########
@@ -20,16 +23,24 @@ public class Map extends JPanel implements ActionListener {
                                              ##..G##.##
                                              ##########""";
 
-    Timer clock;
-    Stack<Tile> pathStack;
-    Tile[][] map;
-    Character playerCharacter;
-    Driver parent;
+    private Timer clock;
+    private Stack<Tile> pathStack;
+    private Tile[][] mapGrid;
+    private Character playerCharacter;
 
-    final String FILE_PATH;
+    private final Driver PARENT;
+    private final String FILE_PATH;
 
+    /**
+     * Constructor for the <code>Map</code> class. Initializes the map to be
+     * traversed by reading it in from a text file.
+     *
+     * @param parent the <code>Driver</code> object this method was called from.
+     * @param filePath the path of the text file this map should be initialized
+     *                 from.
+     */
     public Map(Driver parent, String filePath) {
-        this.parent = parent;
+        PARENT = parent;
         FILE_PATH = filePath;
 
         clock = new Timer(250, this);
@@ -53,12 +64,12 @@ public class Map extends JPanel implements ActionListener {
                 longestLine = line.length;
         }
 
-        map = new Tile[longestLine][charGrid.size()];
+        mapGrid = new Tile[longestLine][charGrid.size()];
 
         char currentChar;
         char[] currentRow;
-        for (int i = 0; i < map.length; i++) {
-            for (int j = 0; j < map[i].length; j++) {
+        for (int i = 0; i < mapGrid.length; i++) {
+            for (int j = 0; j < mapGrid[i].length; j++) {
                 currentRow = charGrid.get(j);
                 if (i < currentRow.length)
                     currentChar = currentRow[i];
@@ -66,27 +77,27 @@ public class Map extends JPanel implements ActionListener {
                     currentChar = '#';
 
                 if (currentChar == '.')
-                    map[i][j] = new Path(i, j);
+                    mapGrid[i][j] = new Path(i, j);
                 else if (currentChar == 'G')
-                    map[i][j] = new Goal(i, j);
+                    mapGrid[i][j] = new Goal(i, j);
                 else if (currentChar == 'C') {
-                    map[i][j] = new Path(i, j);
+                    mapGrid[i][j] = new Path(i, j);
                     if (pathStack.empty() == false)
                         pathStack.removeAllElements();
-                    pathStack.push(map[i][j]);
+                    pathStack.push(mapGrid[i][j]);
                     playerCharacter = new Character(i, j);
                 } else
-                    map[i][j] = new Obstacle(i, j);
+                    mapGrid[i][j] = new Obstacle(i, j);
             }
         }
 
         if (playerCharacter == null) {
             outer:
-            for (Tile[] column : map) {
+            for (Tile[] column : mapGrid) {
                 for (Tile tile : column) {
                     if (tile instanceof Path path) {
                         playerCharacter = new Character(path.getX_POS(), path.getY_POS());
-                        pathStack.push(map[path.getX_POS()][path.getY_POS()]);
+                        pathStack.push(mapGrid[path.getX_POS()][path.getY_POS()]);
 
                         break outer;
                     }
@@ -94,34 +105,36 @@ public class Map extends JPanel implements ActionListener {
             }
         }
 
-        for (int i = 0; i < map.length; i++) {
-            for (int j = 0; j < map[i].length; j++) {
-                if (map[i][j] instanceof Path currentPath) {
-                    /* Thought to use a cool ternary operator statement here to
-                       ensure k would be in the map bounds, but IntelliJ
-                       recommended this simple function call instead. */
-                    for (int k = Math.max(i - 1, 0); k < Math.min(i + 2, map.length); k++) {
-                        if (k != i && (map[k][j] instanceof Path || map[k][j] instanceof Goal))
+        for (int i = 0; i < mapGrid.length; i++) {
+            for (int j = 0; j < mapGrid[i].length; j++) {
+                if (mapGrid[i][j] instanceof Path currentPath) {
+                    for (int k = Math.max(i - 1, 0); k < Math.min(i + 2, mapGrid.length); k++) {
+                        if (k != i && (mapGrid[k][j] instanceof Path || mapGrid[k][j] instanceof Goal))
                             currentPath.setNeighbourDirection(2 - (k - i));
                     }
-                    for (int k = Math.max(j - 1, 0); k < Math.min(j + 2, map[0].length); k++) {
-                        if (k != j && (map[i][k] instanceof Path || map[i][k] instanceof Goal))
+                    for (int k = Math.max(j - 1, 0); k < Math.min(j + 2, mapGrid[0].length); k++) {
+                        if (k != j && (mapGrid[i][k] instanceof Path || mapGrid[i][k] instanceof Goal))
                             currentPath.setNeighbourDirection(1 + k - j);
                     }
                 }
             }
         }
+
         if (hasPaths())
-            setPreferredSize(new Dimension(map.length * Tile.TILE_SIZE, map[0].length * Tile.TILE_SIZE));
+            setPreferredSize(new Dimension(mapGrid.length * Tile.TILE_SIZE, mapGrid[0].length * Tile.TILE_SIZE));
         else {
-            map[0][0] = new Path(0, 0);
+            mapGrid[0][0] = new Path(0, 0);
             playerCharacter = new Character(0, 0);
         }
 
     }
 
+    /**
+     *  @return whether <code>mapGrid</code> contains at least 1 <code>Path</code>
+     *          object.
+     */
     public boolean hasPaths() {
-        for (Tile[] column : map) {
+        for (Tile[] column : mapGrid) {
             for (Tile tile : column) {
                 if (tile instanceof Path)
                     return true;
@@ -135,103 +148,86 @@ public class Map extends JPanel implements ActionListener {
         return FILE_PATH;
     }
 
+    /**
+     * @return whether the tile <code>playerCharacter</code> is standing on is
+     * an instance of <code>Goal</code>.
+     */
     public boolean goalFound() {
-        return map[playerCharacter.getXPosition()][playerCharacter.getYPosition()] instanceof Goal;
+        return mapGrid[playerCharacter.getXPosition()][playerCharacter.getYPosition()] instanceof Goal;
     }
 
     private void pathComplete() {
         clock.stop();
-        parent.viewerStop.setEnabled(false);
+        PARENT.viewerStop.setEnabled(false);
         showMessageDialog(null, "You made it!");
     }
 
-    public String toString() {
-        StringBuilder mapString = new StringBuilder();
-
-        int characterXPos = playerCharacter.getINITIAL_X();
-        int characterYPos = playerCharacter.getINITIAL_Y();
-
-        for (int i = 0; i < map[0].length; i++) {
-            for (int j = 0; j < map.length; j++) {
-                if (i == characterYPos && j == characterXPos)
-                    mapString.append('C');
-                else if (map[j][i] instanceof Path)
-                    mapString.append('.');
-                else if (map[j][i] instanceof Goal)
-                    mapString.append('G');
-                else if (map[j][i] instanceof Obstacle)
-                    mapString.append('#');
-            }
-            mapString.append("\n");       }
-
-        return mapString.toString();
-    }
-
+    /**
+     * Handles solving the map while allowing the user to view the process in
+     * steps.
+     *
+     * @param ae the <code>Timer</code> event that triggers this method.
+     */
     @Override
-    public void actionPerformed(ActionEvent e) {
+    public void actionPerformed(ActionEvent ae) {
         Path currentPath = (Path) pathStack.peek();
         currentPath.setVisited();
-
-        Path currentNeighbour;
 
         int xPos = currentPath.getX_POS();
         int yPos = currentPath.getY_POS();
 
-        for (int i = Math.max(xPos - 1, 0); i < Math.min(xPos + 2, map.length); i++) {
-            if (i != xPos && map[i][yPos] instanceof Goal) {
-                pathStack.push(map[i][yPos]);
-                playerCharacter.move(((Goal) pathStack.peek()).getX_POS(), ((Goal) pathStack.peek()).getY_POS());
-                currentPath.setState(playerCharacter.getDirection().getValue());
+        /* Checks if a goal is adjacent to the current path. Performed before
+         * the regular movement between paths because it's reliant on methods
+         * found in the Path class and not the Goal class. This has the nice
+         * side effect of making the path solving slightly smarter, as adjacent
+         * goals won't simply be passed. */
+        for (int i = Math.max(xPos - 1, 0); i < Math.min(xPos + 2, mapGrid.length); i++) {
+            if (i != xPos && mapGrid[i][yPos] instanceof Goal goal) {
+                moveTo(goal);
 
-                repaint();
                 pathComplete();
 
                 return;
             }
         }
-        for (int i = Math.max(yPos - 1, 0); i < Math.min(yPos + 2, map[0].length); i++) {
-            if (i != yPos && map[xPos][i] instanceof Goal) {
-                pathStack.push(map[xPos][i]);
-                playerCharacter.move(((Goal) pathStack.peek()).getX_POS(), ((Goal) pathStack.peek()).getY_POS());
-                currentPath.setState(playerCharacter.getDirection().getValue());
+        for (int i = Math.max(yPos - 1, 0); i < Math.min(yPos + 2, mapGrid[0].length); i++) {
+            if (i != yPos && mapGrid[xPos][i] instanceof Goal goal) {
+                moveTo(goal);
 
-                repaint();
                 pathComplete();
 
                 return;
             }
         }
 
+        // Steps to the next path on the map.
         for (Directions d : Directions.values()) {
             if (currentPath.hasNeighbour(d.getValue() - 1)) {
-                if (d == Directions.NORTH || d == Directions.SOUTH) {
-                    currentNeighbour = (Path) map[xPos][yPos + (d.getValue() - 2)];
+                if ((d == Directions.NORTH || d == Directions.SOUTH)
+                        && mapGrid[xPos][yPos + (d.getValue() - 2)] instanceof Path currentNeighbour) {
                     if (currentNeighbour.isVisited() == false) {
-                        pathStack.push(currentNeighbour);
-                        playerCharacter.move(currentNeighbour.getX_POS(), currentNeighbour.getY_POS());
-                        currentPath.setState(playerCharacter.getDirection().getValue());
+                        moveTo(currentNeighbour);
 
-                        repaint();
                         return;
                     }
                 }
-                if (d == Directions.EAST || d == Directions.WEST) {
-                    currentNeighbour = (Path) map[xPos - (d.getValue() - 3)][yPos];
+                if ((d == Directions.EAST || d == Directions.WEST)
+                        && mapGrid[xPos - (d.getValue() - 3)][yPos] instanceof Path currentNeighbour) {
                     if (currentNeighbour.isVisited() == false) {
-                        pathStack.push(currentNeighbour);
-                        playerCharacter.move(currentNeighbour.getX_POS(), currentNeighbour.getY_POS());
-                        currentPath.setState(playerCharacter.getDirection().getValue());
+                        moveTo(currentNeighbour);
 
-                        repaint();
                         return;
                     }
                 }
             }
         }
 
+        /* Marks the current path and backtracks if no unvisited paths are
+           adjacent to it. */
         ((Path) pathStack.pop()).setCompleted();
+
         if (pathStack.empty()) {
-            showMessageDialog(null, "Game over");
+            showMessageDialog(null, "No path to goal found.");
             reset();
         } else {
             currentPath = (Path) pathStack.peek();
@@ -241,16 +237,44 @@ public class Map extends JPanel implements ActionListener {
         repaint();
     }
 
+    /**
+     * Moves <code>playerCharacter</code> to <code>destination</code>, then
+     * copies <code>playerCharacter</code>'s direction value onto the
+     * <code>Path</code> object at the top of <code>pathStack</code> and pushes
+     * <code>destination</code> onto <code>pathStack</code>.
+     *
+     * @param destination the <code>Tile</code> to move to.
+     */
+    public void moveTo(Tile destination) {
+        playerCharacter.move(destination.getX_POS(), destination.getY_POS());
+        ((Path) pathStack.peek()).setState(playerCharacter.getDirection().getValue());
+        pathStack.push(destination);
+
+        repaint();
+    }
+
+    /**
+     * Starts the <code>Timer</code> responsible for animating map traversal.
+     */
     public void start() {
         clock.start();
     }
 
+    /**
+     * Stops the <code>Timer</code> responsible for animating map traversal.
+     */
     public void stop() {
         clock.stop();
     }
 
+    /**
+     * Resets all <code>Path</code> tiles in <code>mapGrid</code> to their default
+     * state, moves <code>playerCharacter</code> back to the starting position,
+     * and pushes the <code>Path</code> tile at the starting position back onto
+     * the <code>pathStack</code>.
+     */
     public void reset() {
-        for (Tile[] column : map) {
+        for (Tile[] column : mapGrid) {
             for (Tile tile : column) {
                 if (tile instanceof Path path)
                     path.reset();
@@ -259,7 +283,7 @@ public class Map extends JPanel implements ActionListener {
 
         playerCharacter.reset();
         pathStack.clear();
-        pathStack.push(map[playerCharacter.getXPosition()][playerCharacter.getYPosition()]);
+        pathStack.push(mapGrid[playerCharacter.getXPosition()][playerCharacter.getYPosition()]);
 
         repaint();
     }
@@ -268,7 +292,7 @@ public class Map extends JPanel implements ActionListener {
     protected void paintComponent(Graphics page) {
         super.paintComponent(page);
 
-        for (Tile[] column : map) {
+        for (Tile[] column : mapGrid) {
             for (Tile tile : column) {
                 tile.draw(this, page, 0, 0);
             }

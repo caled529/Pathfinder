@@ -1,6 +1,9 @@
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * Represents a traversable path within a map.
+ */
 public class Path extends Tile {
     static final ImageIcon SPRITE = new ImageIcon("assets/path.png");
     static final ImageIcon[] STEP_DIRECTIONS = {new ImageIcon("assets/pathN.png"),
@@ -8,10 +11,12 @@ public class Path extends Tile {
                                                 new ImageIcon("assets/pathS.png"),
                                                 new ImageIcon("assets/pathW.png")};
     static final ImageIcon COMPLETED_PATH = new ImageIcon("assets/pathFinished.png");
-    private final int X_POS, Y_POS;
+
     private int state;
     private boolean visited, completed;
-    private final boolean[] neighbourDirections;
+
+    private final int X_POS, Y_POS;
+    private final boolean[] NEIGHBOUR_DIRECTIONS;
 
     public Path(int xPos, int yPos) {
         X_POS = xPos;
@@ -19,13 +24,15 @@ public class Path extends Tile {
         state = 0;
         visited = false;
         completed = false;
-        neighbourDirections = new boolean[Directions.values().length];
+        NEIGHBOUR_DIRECTIONS = new boolean[Directions.values().length];
     }
 
+    @Override
     public int getX_POS() {
         return X_POS;
     }
 
+    @Override
     public int getY_POS() {
         return Y_POS;
     }
@@ -53,15 +60,15 @@ public class Path extends Tile {
     }
 
     public boolean hasNeighbour(int direction) {
-        if (direction >= 0 && direction < neighbourDirections.length)
-            return neighbourDirections[direction];
+        if (direction >= 0 && direction < NEIGHBOUR_DIRECTIONS.length)
+            return NEIGHBOUR_DIRECTIONS[direction];
         else
             return false;
     }
 
     public void setNeighbourDirection(int direction) {
-        if (direction >= 0 && direction < neighbourDirections.length)
-            neighbourDirections[direction] = true;
+        if (direction >= 0 && direction < NEIGHBOUR_DIRECTIONS.length)
+            NEIGHBOUR_DIRECTIONS[direction] = true;
     }
 
     @Override

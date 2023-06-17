@@ -8,8 +8,10 @@ import java.util.Scanner;
 import static javax.swing.JOptionPane.showMessageDialog;
 
 /**
+ * Pathfinder
+ *
  * @author Cale Dillon
- * @version 2023/06/08
+ * @version 2023/06/17
  */
 public class Driver extends JFrame implements ActionListener {
     JFrame frame;
@@ -31,7 +33,10 @@ public class Driver extends JFrame implements ActionListener {
 
     /**
      * Constructor for the <code>Driver</code> class. Initializes all graphical
-     * components
+     * components for the map solver view and the map editor view. Also
+     * initializes the <code>Map</code> and <code>MapEditor</code> objects with
+     * the <code>default.txt</code> file found under the maps directory in the
+     * project root.
      */
     public Driver() {
         // -------------------- viewer initialization --------------------
@@ -43,13 +48,9 @@ public class Driver extends JFrame implements ActionListener {
         viewerButtonPanel = new JPanel();
 
         viewerStart = makeButton("Start", null, '\n', true, CALIBRI20);
-
         viewerStop = makeButton("Stop", null, '\n', false, CALIBRI20);
-
         viewerReset = makeButton("Reset", null, 'R', true, CALIBRI20);
-
         viewerLoad = makeButton("Load", null, 'L', true, CALIBRI20);
-
         startEditor = makeButton("Editor", null, 'E', true, CALIBRI20);
         
         viewerButtonPanel.add(viewerStart);
@@ -66,9 +67,7 @@ public class Driver extends JFrame implements ActionListener {
         editorButtonPanel = new JPanel();
 
         editorLoad = makeButton("Load", null, 'L', false, CALIBRI20);
-
         save = makeButton("Save", null, 'S', false, CALIBRI20);
-
         exitEditor = makeButton("Exit", null, 'E', false, CALIBRI20);
         
         editorButtonPanel.add(editorLoad);
@@ -78,16 +77,12 @@ public class Driver extends JFrame implements ActionListener {
         // -------------------- tile selector initialization --------------------
         
         editorTileSelect = new JPanel();
-        
         editorPath = makeButton("Path", new ImageIcon("assets/path.png"), 'P',
                 false, null);
-        
         editorGoal = makeButton("Goal", new ImageIcon("assets/goal.png"), 'G',
                 false, null);
-        
         editorObstacle = makeButton("Obstacle",
                 new ImageIcon("assets/obstacle.png"), 'O', false, null);
-        
         editorCharacterStart = makeButton("Character Start",
                 new ImageIcon("assets/characterStart.png"), 'C', false, null);
         
@@ -102,12 +97,11 @@ public class Driver extends JFrame implements ActionListener {
         editorInternalContainer = new JPanel();
         editorInternalContainer.setLayout(new BorderLayout());
 
-        editor = new MapEditor(this, "maps/default.txt");
+        editor = new MapEditor("maps/default.txt");
 
         editorChangeHorizontal = new JPanel();
 
         editorIncreaseHorizontal = makeButton(">", null, '.', false, null);
-
         editorDecreaseHorizontal = makeButton("<", null, ',', false, null);
         
         editorChangeHorizontal.add(editorIncreaseHorizontal);
@@ -117,7 +111,6 @@ public class Driver extends JFrame implements ActionListener {
         editorChangeVertical = new JPanel();
 
         editorIncreaseVertical = makeButton("v", null, '=', false, null);
-
         editorDecreaseVertical = makeButton("^", null, '-', false, null);
 
         editorChangeVertical.add(editorIncreaseVertical);
@@ -146,6 +139,18 @@ public class Driver extends JFrame implements ActionListener {
         frame.setVisible(true);
     }
 
+    /**
+     * Creates a <code>JButton</code> with the specified parameters.
+     *
+     * @param buttonText Text to be displayed on the button.
+     * @param icon Icon to be displayed on the button.
+     * @param mnemonic Alt-key mnemonic for the button.
+     * @param isEnabled Whether the button is enabled or not at the start of the
+     *                  program.
+     * @param font Font to be used for the button's text.
+     *
+     * @return The created <code>JButton</code>.
+     */
     public JButton makeButton(String buttonText, ImageIcon icon, char mnemonic,
                               boolean isEnabled, Font font) {
         JButton newButton = new JButton(buttonText, icon);
@@ -158,9 +163,14 @@ public class Driver extends JFrame implements ActionListener {
         return newButton;
     }
 
+    /**
+     * Handles button presses.
+     *
+     * @param ae The <code>ActionEvent</code> that triggered the method call.
+     */
     @Override
-    public void actionPerformed(ActionEvent e) {
-        JButton sourceButton = (JButton) e.getSource();
+    public void actionPerformed(ActionEvent ae) {
+        JButton sourceButton = (JButton) ae.getSource();
 
         if (sourceButton == viewerStart) {
             viewer.start();
@@ -177,10 +187,9 @@ public class Driver extends JFrame implements ActionListener {
             viewerStart.setEnabled(true);
         }
         if (sourceButton == viewerReset) {
-            if (viewer.goalFound()) {
+            if (viewer.goalFound())
                 viewerStart.setEnabled(true);
-                viewerStop.setEnabled(false);
-            }
+
             viewer.reset();
         }
         if (sourceButton == viewerLoad) {
@@ -216,37 +225,32 @@ public class Driver extends JFrame implements ActionListener {
             Component[] components;
 
             components = viewerButtonPanel.getComponents();
-
             for (Component component : components) {
                 component.setEnabled(false);
             }
 
             components = editorButtonPanel.getComponents();
-
             for (Component component : components) {
                 component.setEnabled(true);
             }
 
             components = editorTileSelect.getComponents();
-
             for (Component component : components) {
                 component.setEnabled(true);
             }
 
             components = editorChangeHorizontal.getComponents();
-
             for (Component component : components) {
                 component.setEnabled(true);
             }
 
             components = editorChangeVertical.getComponents();
-
             for (Component component : components) {
                 component.setEnabled(true);
             }
 
             editorInternalContainer.remove(editorInternalScrollPane);
-            editor = new MapEditor(this, viewer.getFILE_PATH());
+            editor = new MapEditor(viewer.getFILE_PATH());
             editorInternalScrollPane = new JScrollPane(editor);
             editorInternalContainer.add(editorInternalScrollPane, BorderLayout.CENTER);
 
@@ -259,6 +263,7 @@ public class Driver extends JFrame implements ActionListener {
             frame.pack();
             frame.repaint();
         }
+
         if (sourceButton == editorLoad) {
             FileDialog fd = new FileDialog(this, "Choose a file", FileDialog.LOAD);
             fd.setDirectory("maps");
@@ -266,7 +271,7 @@ public class Driver extends JFrame implements ActionListener {
             fd.setVisible(true);
             String filePath = fd.getDirectory() + "/" + fd.getFile();
             if (new Scanner(filePath).hasNextLine()) {
-                editor = new MapEditor(this, filePath);
+                editor = new MapEditor(filePath);
                 frame.getContentPane().remove(mapScrollPane);
                 mapScrollPane = new JScrollPane(viewer);
                 frame.getContentPane().add(mapScrollPane, BorderLayout.CENTER);
@@ -282,6 +287,8 @@ public class Driver extends JFrame implements ActionListener {
             fd.setVisible(true);
             String filePath = fd.getDirectory() + "/" + fd.getFile();
 
+            editor.setFilePath(filePath);
+
             try {
                 PrintWriter pWriter = new PrintWriter(filePath);
                 pWriter.write(editor.toString());
@@ -295,36 +302,37 @@ public class Driver extends JFrame implements ActionListener {
             Component[] components;
 
             components = viewerButtonPanel.getComponents();
-
             for (Component component : components) {
                 component.setEnabled(true);
             }
 
             components = editorButtonPanel.getComponents();
-
             for (Component component : components) {
                 component.setEnabled(false);
             }
+            viewerStop.setEnabled(false);
 
             components = editorTileSelect.getComponents();
-
             for (Component component : components) {
                 component.setEnabled(false);
             }
 
             components = editorChangeHorizontal.getComponents();
-
             for (Component component : components) {
                 component.setEnabled(false);
             }
 
             components = editorChangeVertical.getComponents();
-
             for (Component component : components) {
                 component.setEnabled(false);
             }
 
-            String filePath = "maps/untitledMap.txt";
+            String filePath;
+
+            if (editor.isSaved() == false)
+                filePath = "maps/untitledMap.txt";
+            else
+                filePath = editor.getSavedFilePath();
 
             try {
                 PrintWriter pWriter = new PrintWriter(filePath);
@@ -345,14 +353,40 @@ public class Driver extends JFrame implements ActionListener {
             frame.getContentPane().add(buttonScrollPane, BorderLayout.SOUTH);
             frame.pack();
         }
-        if (sourceButton == editorIncreaseHorizontal)
-            editor.expandHorizontal();
-        if (sourceButton == editorDecreaseHorizontal)
+
+        if (sourceButton == editorIncreaseHorizontal) {
+            if (editor.getMapWidth() > 255)
+                editorIncreaseHorizontal.setEnabled(false);
+
+            editorDecreaseHorizontal.setEnabled(true);
+
+            editor.increaseHorizontal();
+        }
+        if (sourceButton == editorDecreaseHorizontal) {
+            if (editor.getMapWidth() < 2)
+                editorDecreaseHorizontal.setEnabled(false);
+
+            editorIncreaseHorizontal.setEnabled(true);
+
             editor.decreaseHorizontal();
-        if (sourceButton == editorIncreaseVertical)
-            editor.expandVertical();
-        if (sourceButton == editorDecreaseVertical)
+        }
+        if (sourceButton == editorIncreaseVertical) {
+            if (editor.getMapHeight() > 255)
+                editorIncreaseVertical.setEnabled(false);
+
+            editorDecreaseVertical.setEnabled(true);
+
+            editor.increaseVertical();
+        }
+        if (sourceButton == editorDecreaseVertical) {
+            if (editor.getMapHeight() < 2)
+                editorDecreaseVertical.setEnabled(false);
+
+            editorIncreaseVertical.setEnabled(true);
+
             editor.decreaseVertical();
+        }
+
         if (sourceButton == editorPath)
             editor.setSelectedTile("path");
         if (sourceButton == editorGoal)
