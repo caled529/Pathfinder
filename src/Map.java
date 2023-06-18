@@ -64,7 +64,7 @@ public class Map extends JPanel implements ActionListener {
                 longestLine = line.length;
         }
 
-        mapGrid = new Tile[longestLine][charGrid.size()];
+        mapGrid = new Tile[Math.min(longestLine, 256)][Math.min(charGrid.size(), 256)];
 
         char currentChar;
         char[] currentRow;
@@ -126,7 +126,6 @@ public class Map extends JPanel implements ActionListener {
             mapGrid[0][0] = new Path(0, 0);
             playerCharacter = new Character(0, 0);
         }
-
     }
 
     /**

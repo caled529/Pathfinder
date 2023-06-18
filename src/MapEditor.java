@@ -55,10 +55,10 @@ public class MapEditor extends JPanel implements MouseListener {
 
             char currentChar;
             char[] currentRow;
-            for (int i = 0; i < longestLine; i++) {
+            for (int i = 0, n = Math.min(longestLine, 256); i < n; i++) {
                 mapGrid.add(new ArrayList<>());
 
-                for (int j = 0, n = charGrid.size(); j < n; j++) {
+                for (int j = 0, o = Math.min(charGrid.size(), 256); j < o; j++) {
                     currentRow = charGrid.get(j);
                     if (i < currentRow.length)
                         currentChar = currentRow[i];
