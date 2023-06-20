@@ -77,14 +77,11 @@ public class Driver extends JFrame implements ActionListener {
         // -------------------- tile selector initialization --------------------
         
         editorTileSelect = new JPanel();
-        editorPath = makeButton("Path", new ImageIcon("assets/path.png"), 'P',
-                false, null);
-        editorGoal = makeButton("Goal", new ImageIcon("assets/goal.png"), 'G',
-                false, null);
-        editorObstacle = makeButton("Obstacle",
-                new ImageIcon("assets/obstacle.png"), 'O', false, null);
-        editorCharacterStart = makeButton("Character Start",
-                new ImageIcon("assets/characterStart.png"), 'C', false, null);
+        editorPath = makeButton("Path", Path.SPRITE, 'P', false, null);
+        editorGoal = makeButton("Goal", Goal.SPRITE, 'G', false, null);
+        editorObstacle = makeButton("Obstacle", Obstacle.SPRITE, 'O', false, null);
+        editorCharacterStart = makeButton("Character Start", CharacterStart.SPRITE,
+                'C', false, null);
         
         editorTileSelect.add(editorPath);
         editorTileSelect.add(editorGoal);
@@ -355,36 +352,37 @@ public class Driver extends JFrame implements ActionListener {
         }
 
         if (sourceButton == editorIncreaseHorizontal) {
-            if (editor.getMapWidth() > 255)
+            editor.increaseHorizontal();
+
+            if (editor.getMapWidth() > 255) {
                 editorIncreaseHorizontal.setEnabled(false);
+            }
 
             editorDecreaseHorizontal.setEnabled(true);
-
-            editor.increaseHorizontal();
         }
         if (sourceButton == editorDecreaseHorizontal) {
+            editor.decreaseHorizontal();
+
             if (editor.getMapWidth() < 2)
                 editorDecreaseHorizontal.setEnabled(false);
 
             editorIncreaseHorizontal.setEnabled(true);
-
-            editor.decreaseHorizontal();
         }
         if (sourceButton == editorIncreaseVertical) {
+            editor.increaseVertical();
+
             if (editor.getMapHeight() > 255)
                 editorIncreaseVertical.setEnabled(false);
 
             editorDecreaseVertical.setEnabled(true);
-
-            editor.increaseVertical();
         }
         if (sourceButton == editorDecreaseVertical) {
+            editor.decreaseVertical();
+
             if (editor.getMapHeight() < 2)
                 editorDecreaseVertical.setEnabled(false);
 
             editorIncreaseVertical.setEnabled(true);
-
-            editor.decreaseVertical();
         }
 
         if (sourceButton == editorPath)

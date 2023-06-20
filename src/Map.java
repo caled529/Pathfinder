@@ -227,6 +227,7 @@ public class Map extends JPanel implements ActionListener {
 
         if (pathStack.empty()) {
             showMessageDialog(null, "No path to goal found.");
+            clock.stop();
             reset();
         } else {
             currentPath = (Path) pathStack.peek();
